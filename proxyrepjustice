@@ -1,30 +1,29 @@
-<?php
+const express = require("express");
+const cors = require("cors");
+const fetch = require("node-fetch");
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Обработка предварительного запроса OPTIONS
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
+app.use(cors());
+app.use(express.json());
 
-$input = file_get_contents('php://input');
+app.post("/", async (req, res) => {
+  try {
+    const response = await fetch("http://a1127351.xsph.ru/index.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
 
-$ch = curl_init('http://a1127351.xsph.ru/index.php');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json'
-]);
+    const data = await response.text(); // или .json() если JSON
+    res.status(response.status).send(data);
+  } catch (error) {
+    console.error("Ошибка прокси:", error);
+    res.status(500).json({ success: false, error: "Proxy error" });
+  }
+});
 
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-// Отдаём ответ обратно
-http_response_code($httpCode);
-echo $response;
-?>
+app.listen(PORT, () => {
+  console.log(`Прокси работает на порту ${PORT}`);
+});
